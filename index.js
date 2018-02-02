@@ -1,4 +1,6 @@
-const express = require('express');
+const app = require('express')();
+const server = require('http').Server(app);
+const io = require('socket.io')(server);
 const fs = require('fs');
 
 // create CSV file if it doesn't exist
@@ -8,14 +10,16 @@ if (!csvExists) {
   fs.writeFileSync('./humidity_test.csv', 'timestamp,sensor,humidity,temperature\n');
 }
 
-const server = express();
+io.on('connection', (socket) => {
+  console.log('Connected');
+});
 
-server.get('/', (req, res) => {
-  res.send('<h1>Hello  there</h1>');
+app.get('/', (req, res) => {
+  res.sendFile('./index.html');
 });
 
 // handle requests
-server.get('/test', (req, res) => {
+app.get('/sensor', (req, res) => {
   console.log(req.query);
 
   // get values from query
@@ -32,4 +36,4 @@ server.get('/test', (req, res) => {
   });
 });
 
-server.listen(8080, () => console.log('Server listening on port 8080'));
+app.listen(8080, () => console.log('Server listening on port 8080'));

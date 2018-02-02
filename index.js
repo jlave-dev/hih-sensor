@@ -2,6 +2,7 @@ const app = require('express')();
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
 const fs = require('fs');
+const path = require('path');
 
 // create CSV file if it doesn't exist
 const csvExists = fs.existsSync('./humidity_test.csv');
@@ -15,7 +16,7 @@ io.on('connection', (socket) => {
 });
 
 app.get('/', (req, res) => {
-  res.sendFile('./index.html');
+  res.sendFile(path.resolve('./index.html'));
 });
 
 // handle requests

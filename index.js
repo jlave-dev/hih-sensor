@@ -10,6 +10,10 @@ if (!csvExists) {
 
 const server = express();
 
+server.get('/', (req, res) => {
+  res.send('<h1>Hello  there</h1>');
+});
+
 // handle requests
 server.get('/test', (req, res) => {
   console.log(req.query);

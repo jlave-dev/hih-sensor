@@ -6,15 +6,45 @@
       content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible"
       content="ie=edge">
+    <link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0/css/bootstrap.min.css">
     <title>mandana.ml</title>
   </head>
   <body>
-    <h1>Hello there</h1>
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th scope="col">Time</th>
+          <th scope="col">Sensor</th>
+          <th scope="col">Humidity</th>
+          <th scope="col">Temperature</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+      </tbody>
+    </table>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"></script>
     <script>
-      var socket = io('http://mandana.ml');
-      socket.on('reading:received', function (data) {
-        console.log(data);
+      const socket = io('http://mandana.ml');
+      socket.on('reading:received', (data) => {
+        const { timestamp, sensor, humidity, temperature } = data;
+        const tableBody = document.getElementById('table-body');
+        const firstRow = tableBody.firstChild;
+        const newRow = document.createElement('template');
+        newRow.innerHTML = `
+          <tr>
+            <td>${timestamp}</td>
+            <td>${sensor}</td>
+            <td>${humidity}</td>
+            <td>${temperature}</td>
+          </tr>
+        `;
+        if (firstRow) {
+          tableBody.insertBefore(newRow, firstRow);
+        } else {
+          tableBody.appendChild(newRow);
+        }
       });
     </script>
   </body>

@@ -28,11 +28,12 @@
     <script>
       const socket = io('http://mandana.ml');
       socket.on('reading:received', (data) => {
+        console.log(data);
         const { timestamp, sensor, humidity, temperature } = data;
         const tableBody = document.getElementById('table-body');
         const firstRow = tableBody.firstChild;
-        const newRow = document.createElement('template');
-        newRow.innerHTML = `
+        const template = document.createElement('template');
+        template.innerHTML = `
           <tr>
             <td>${timestamp}</td>
             <td>${sensor}</td>
@@ -40,6 +41,8 @@
             <td>${temperature}</td>
           </tr>
         `;
+        // console.log(tableBody, firstRow, newRow.content);
+        const newRow = document.importNode(template.content, true);
         if (firstRow) {
           tableBody.insertBefore(newRow, firstRow);
         } else {

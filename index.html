@@ -13,7 +13,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"></script>
     <script>
       var socket = io('http://mandana.ml');
-      socket.on('reading', function (data) {
+      socket.on('reading:received', function (data) {
         console.log(data);
       });
     </script>

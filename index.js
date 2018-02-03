@@ -11,10 +11,6 @@ if (!csvExists) {
   fs.writeFileSync('./humidity_test.csv', 'timestamp,sensor,humidity,temperature\n');
 }
 
-io.on('connection', (socket) => {
-  console.log('Connected');
-});
-
 app.get('/', (req, res) => {
   res.sendFile(path.resolve('./index.html'));
 });
@@ -27,6 +23,10 @@ app.get('/sensor', (req, res) => {
   const { sensor, humidity, temperature } = req.query;
   const timestamp = new Date();
 
+  const reading = {timestamp, sensor, humidity, temperature};
+
+  io.sockets.emit('reading:received', reading);
+
   // build CSV string
   const csvData = `${timestamp},${sensor},${humidity},${temperature}\n`;
 
@@ -37,4 +37,4 @@ app.get('/sensor', (req, res) => {
   });
 });
 
-app.listen(8080, () => console.log('Server listening on port 8080'));
+server.listen(8080, () => console.log('Server listening on port 8080'));

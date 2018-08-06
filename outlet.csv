@@ -1,0 +1,11 @@
+timestamp,humidity,temperature
+Mon Aug 06 2018 17:16:21 GMT-0500 (Central Daylight Time),65,87
+Mon Aug 06 2018 17:21:39 GMT-0500 (Central Daylight Time),66,88
+Mon Aug 06 2018 17:26:38 GMT-0500 (Central Daylight Time),20,32
+Mon Aug 06 2018 17:28:25 GMT-0500 (Central Daylight Time),0,32
+Mon Aug 06 2018 17:29:32 GMT-0500 (Central Daylight Time),100,32
+Mon Aug 06 2018 17:29:41 GMT-0500 (Central Daylight Time),73.15,32
+Mon Aug 06 2018 17:29:49 GMT-0500 (Central Daylight Time),73.15,60
+Mon Aug 06 2018 17:30:18 GMT-0500 (Central Daylight Time),73.15,120
+Mon Aug 06 2018 17:30:21 GMT-0500 (Central Daylight Time),73.15,500
+Mon Aug 06 2018 17:30:24 GMT-0500 (Central Daylight Time),73.15,50

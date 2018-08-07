@@ -14,6 +14,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.js"></script>
     <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.min.css" />
+    <link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
     <title>mandana.ml</title>
     <style>
       .is-vertical {
@@ -59,9 +61,27 @@
                   {{ sensors.inlet.length ? sensors.inlet[0].temperature + 'º' : '-º' }}
                 </label>
                 <canvas id="inlet-temperature"/>
-                <a class="button is-info has-margin-top" href="/download/inlet">
-                  Download inlet CSV
-                </a>
+                <div class="columns has-margin-top">
+                  <div class="column">
+                    <a class="button is-fullwidth is-info" href="/download/inlet">
+                      <span class="icon">
+                        <i class="fa fa-download"/>
+                      </span>
+                      <span>Download inlet CSV</span>
+                    </a>
+                  </div>
+                  <div class="column">
+                    <button
+                      :class="{'is-loading': isClearing.inlet}"
+                      class="button is-fullwidth is-danger"
+                      @click="onClearSensor('inlet')">
+                      <span class="icon">
+                        <i class="fa fa-trash"/>
+                      </span>
+                      <span>Reset inlet</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="column has-text-centered">
@@ -76,9 +96,27 @@
                   {{ sensors.outlet.length ? sensors.outlet[0].temperature + 'º' : '-º' }}
                 </label>
                 <canvas id="outlet-temperature"/>
-                <a class="button is-info has-margin-top" href="/download/outlet">
-                  Download outlet CSV
-                </a>
+                <div class="columns has-margin-top">
+                  <div class="column">
+                    <a class="button is-fullwidth is-info" href="/download/outlet">
+                      <span class="icon">
+                        <i class="fa fa-download"/>
+                      </span>
+                      <span>Download outlet CSV</span>
+                    </a>
+                  </div>
+                  <div class="column">
+                    <button
+                      :class="{'is-loading': isClearing.outlet}"
+                      class="button is-fullwidth is-danger"
+                      @click="onClearSensor('outlet')">
+                      <span class="icon">
+                        <i class="fa fa-trash"/>
+                      </span>
+                      <span>Reset outlet</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -112,7 +150,11 @@
                 humidity: null,
                 temperature: null,
               },
-            }
+            },
+            isClearing: {
+              inlet: false,
+              outlet: false,
+            },
           };
         },
 
@@ -174,6 +216,20 @@
               if (this.sensors.outlet.length > 10) {
                 this.sensors.outlet.pop()
               }
+            }
+          },
+
+          async onClearSensor(sensor) {
+            try {
+              this.isClearing[sensor] = true;
+              await axios.get(`/clear/${sensor}`);
+              this.sensors[sensor] = [];
+              this.gauges[sensor].humidity.set(0);
+              this.gauges[sensor].temperature.set(0);
+            } catch (error) {
+              console.error(error);
+            } finally {
+              this.isClearing[sensor] = false;
             }
           },
         },

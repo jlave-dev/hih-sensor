@@ -13,18 +13,43 @@ if (!fs.existsSync('./outlet.csv')) {
 }
 
 app.get('/', (req, res) => {
-  res.sendFile(path.resolve('./index.html'));
+  try {
+    res.sendFile(path.resolve('./index.html'));
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500);
+  }
 });
 
 app.get('/download/:sensor', async (req, res) => {
-  const { sensor } = req.params;
-  const csvPath = path.resolve(`./${sensor}.csv`);
-  const csvData = await fs.readFile(csvPath);
-  res.set({
-    'Content-Type': 'text/csv',
-    'Content-Disposition': `attachment; filename=${sensor}.csv`,
-  });
-  res.send(csvData);
+  try {
+    const { sensor } = req.params;
+    const csvPath = path.resolve(`./${sensor}.csv`);
+    const csvData = await fs.readFile(csvPath);
+    res.set({
+      'Content-Type': 'text/csv',
+      'Content-Disposition': `attachment; filename=${sensor}.csv`,
+    });
+    res.send(csvData);
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500);
+  }
+});
+
+app.get('/clear/:sensor', async (req, res) => {
+  try {
+    const { sensor } = req.params;
+    const csvPath = `./${sensor}.csv`;
+    await fs.ensureDir('./bak');
+    await fs.copy(csvPath, `./bak/${sensor}_${new Date()}`)
+    await fs.remove(csvPath);
+    await fs.writeFile(csvPath, 'timestamp,humidity,temperature');
+    res.sendStatus(200);
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500);
+  }
 });
 
 app.get('/most-recent', async (req, res) => {

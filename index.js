@@ -16,11 +16,13 @@ app.get('/', (req, res) => {
   res.sendFile(path.resolve('./index.html'));
 });
 
-app.get('/download', (req, res) => {
-  const csvData = fs.readFileSync(path.resolve('./humidity_test.csv'));
+app.get('/download/:sensor', async (req, res) => {
+  const { sensor } = req.params;
+  const csvPath = path.resolve(`./${sensor}.csv`);
+  const csvData = await fs.readFile(csvPath);
   res.set({
     'Content-Type': 'text/csv',
-    'Content-Disposition': 'attachment; filename=humidity_test.csv',
+    'Content-Disposition': `attachment; filename=${sensor}.csv`,
   });
   res.send(csvData);
 });

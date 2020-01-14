@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible"
+    content="ie=edge">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.17/vue.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gauge.js/1.3.6/gauge.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.js"></script>
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.min.css" />
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+  <title>mandana.ml</title>
+  <style>
+    .is-vertical {
+      display: flex;
+      flex-direction: column
+    }
+
+    .has-margin-top {
+      margin-top: 2rem;
+    }
+
+    .has-margin-bottom {
+      margin-bottom: 2rem;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" />
+
+  <!-- Insert these scripts at the bottom of the HTML, but before you use any Firebase services -->
+
+  <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-app.js"></script>
+
+  <!-- Add Firebase products that you want to use -->
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-firestore.js"></script>
+
+  <script>
+    // Your web app's Firebase configuration
+    var firebaseConfig = {
+      apiKey: "AIzaSyATTjJveMwS_qWaerYq3ddgNAgnUzjpl7w",
+      authDomain: "hih-sensor.firebaseapp.com",
+      databaseURL: "https://hih-sensor.firebaseio.com",
+      projectId: "hih-sensor",
+      storageBucket: "hih-sensor.appspot.com",
+      messagingSenderId: "838084343002",
+      appId: "1:838084343002:web:2d456b3d2ca54dc56321e3"
+    };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+  </script>
+
+  <script>
+    const gaugeOptions = {
+      limitMax: false,     // If false, max value increases automatically if value > maxValue
+      limitMin: false,     // If true, the min value of the gauge will be fixed
+      highDpiSupport: true,     // High resolution support
+    };
+
+    const vm = new Vue({
+      el: '#app',
+
+      template: `
+        <div class="container has-margin-top">
+          <div class="columns">
+            <div class="column has-text-centered">
+              <div class="box is-vertical">
+                <h4 class="title is-4">Inlet</h4>
+                Last updated: {{ lastUpdated('inlet') }}
+                <label class="label has-margin-top">
+                  {{ sensors.inlet.length ? sensors.inlet[0].get('humidity') + '%' : '-%' }}
+                </label>
+                <canvas id="inlet-humidity"/>
+                <label class="label">
+                  {{ sensors.inlet.length ? sensors.inlet[0].get('temperature') + 'º' : '-º' }}
+                </label>
+                <canvas id="inlet-temperature"/>
+                <div class="columns has-margin-top">
+                  <div class="column">
+                    <a class="button is-fullwidth is-info" :href="functionsBaseUrl + '/download/inlet'">
+                      <span class="icon">
+                        <i class="fa fa-download"/>
+                      </span>
+                      <span>Download inlet XLSX</span>
+                    </a>
+                  </div>
+                  <div class="column">
+                    <button
+                      :class="{'is-loading': isClearing.inlet}"
+                      class="button is-fullwidth is-danger"
+                      @click="onClearSensor('inlet')">
+                      <span class="icon">
+                        <i class="fa fa-trash"/>
+                      </span>
+                      <span>Reset inlet</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="column has-text-centered">
+              <div class="box is-vertical">
+                <h4 class="title is-4">Outlet</h4>
+                Last updated: {{ lastUpdated('outlet') }}
+                <label class="label has-margin-top">
+                  {{ sensors.outlet.length ? sensors.outlet[0].get('humidity') + '%' : '-%' }}
+                </label>
+                <canvas id="outlet-humidity"/>
+                <label class="label">
+                  {{ sensors.outlet.length ? sensors.outlet[0].get('temperature') + 'º' : '-º' }}
+                </label>
+                <canvas id="outlet-temperature"/>
+                <div class="columns has-margin-top">
+                  <div class="column">
+                    <a class="button is-fullwidth is-info" :href="functionsBaseUrl + '/download/outlet'">
+                      <span class="icon">
+                        <i class="fa fa-download"/>
+                      </span>
+                      <span>Download outlet XLSX</span>
+                    </a>
+                  </div>
+                  <div class="column">
+                    <button
+                      :class="{'is-loading': isClearing.outlet}"
+                      class="button is-fullwidth is-danger"
+                      @click="onClearSensor('outlet')">
+                      <span class="icon">
+                        <i class="fa fa-trash"/>
+                      </span>
+                      <span>Reset outlet</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `,
+
+      computed: {
+        lastUpdated() {
+          return (sensor) => {
+            if (this.sensors[sensor].length) {
+              return moment(this.sensors[sensor][0].get('time').toDate())
+                .format('ddd MMM D h:mm:ss a');
+            }
+            return 'never';
+          }
+        },
+      },
+
+      data() {
+        return {
+          functionsBaseUrl: 'https://us-central1-hih-sensor.cloudfunctions.net/api',
+          sensors: {
+            inlet: [],
+            outlet: [],
+          },
+          gauges: {
+            inlet: {
+              humidity: null,
+              temperature: null,
+            },
+            outlet: {
+              humidity: null,
+              temperature: null,
+            },
+          },
+          isClearing: {
+            inlet: false,
+            outlet: false,
+          },
+        };
+      },
+
+      watch: {
+        'sensors.inlet'(newInletData) {
+          if (newInletData.length > 0) {
+            this.gauges.inlet.humidity.set(newInletData[0].get('humidity'));
+            this.gauges.inlet.temperature.set(newInletData[0].get('temperature'));
+          }
+        },
+        'sensors.outlet'(newOutletData) {
+          if (newOutletData.length > 0) {
+            this.gauges.outlet.humidity.set(newOutletData[0].get('humidity'));
+            this.gauges.outlet.temperature.set(newOutletData[0].get('temperature'));
+          }
+        },
+      },
+
+      async mounted() {
+        const [inlet, outlet] = await Promise.all([
+          firebase.firestore()
+            .collection('sensors')
+            .doc('inlet')
+            .get(),
+
+          firebase.firestore()
+            .collection('sensors')
+            .doc('outlet')
+            .get()
+        ])
+
+        const inletEarliestReading = inlet.exists
+          ? inlet.get('earliestReading') || new Date()
+          : new Date();
+        const outletEarliestReading = outlet.exists
+          ? outlet.get('earliestReading') || new Date()
+          : new Date();
+
+        this.unsubscribeFromInlet = firebase.firestore()
+          .collection('sensors/inlet/readings')
+          .orderBy('time', 'desc')
+          .where('time', '>', inletEarliestReading)
+          .limit(100)
+          .onSnapshot(snapshot => {
+            this.sensors.inlet = snapshot.docs;
+          });
+
+        this.unsubscribeFromOutlet = firebase.firestore()
+          .collection('sensors/outlet/readings')
+          .orderBy('time', 'desc')
+          .where('time', '>', outletEarliestReading)
+          .limit(100)
+          .onSnapshot(snapshot => {
+            this.sensors.outlet = snapshot.docs;
+          });
+
+        // Set up gauges
+        gaugeOptions.percentColors = [[0.0, "#7adbff"], [1.0, "#42c5f4"]];
+        this.gauges.inlet.humidity = new Gauge(document.getElementById('inlet-humidity'))
+          .setOptions(gaugeOptions);
+        this.gauges.inlet.humidity.setMinValue(0);
+        this.gauges.inlet.humidity.maxValue = 100;
+        this.gauges.outlet.humidity = new Gauge(document.getElementById('outlet-humidity'))
+          .setOptions(gaugeOptions);
+        this.gauges.outlet.humidity.setMinValue(0);
+        this.gauges.outlet.humidity.maxValue = 100;
+
+        gaugeOptions.percentColors = [[0.0, "#42c5f4"], [1.0, "#ff4444"]];
+        this.gauges.inlet.temperature = new Gauge(document.getElementById('inlet-temperature'))
+          .setOptions(gaugeOptions);
+        this.gauges.outlet.temperature = new Gauge(document.getElementById('outlet-temperature'))
+          .setOptions(gaugeOptions);
+      },
+
+      destroyed() {
+        if (this.unsubscribeFromInlet) this.unsubscribeFromInlet();
+        if (this.unsubscribeFromOutlet) this.unsubscribeFromOutlet();
+      },
+
+      methods: {
+        async onClearSensor(sensor) {
+          try {
+            this.isClearing[sensor] = true;
+            await axios.get(`/clear/${sensor}`);
+            this.sensors[sensor] = [];
+            this.gauges[sensor].humidity.set(0);
+            this.gauges[sensor].temperature.set(0);
+          } catch (error) {
+            console.error(error);
+          } finally {
+            this.isClearing[sensor] = false;
+          }
+        },
+      },
+    });
+  </script>
+
+</body>
+
+</html>

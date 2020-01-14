@@ -1,5 +1,6 @@
 *.csv
 bak
+.firebase
 
 # Created by https://www.gitignore.io/api/node,macos
 
@@ -93,4 +94,3 @@ typings/
 
 
 # End of https://www.gitignore.io/api/node,macos
-

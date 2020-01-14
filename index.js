@@ -12,15 +12,6 @@ if (!fs.existsSync('./outlet.csv')) {
   fs.writeFileSync('./outlet.csv', 'timestamp,humidity,temperature');
 }
 
-app.get('/', (req, res) => {
-  try {
-    res.sendFile(path.resolve('./index.html'));
-  } catch (error) {
-    console.error(error);
-    res.sendStatus(500);
-  }
-});
-
 app.get('/download/:sensor', async (req, res) => {
   try {
     const { sensor } = req.params;

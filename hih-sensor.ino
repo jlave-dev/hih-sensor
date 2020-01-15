@@ -10,7 +10,7 @@ const char* host        = "us-central1-hih-sensor.cloudfunctions.net";
 const int loopDelayInMs = 60000;
 
 char ssid[50]     = "SweetHome-2.4";
-char password[50] = "bestpersiancucumber1989";
+char password[50] = "***";
 
 void setup()
 {

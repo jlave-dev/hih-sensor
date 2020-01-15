@@ -15,13 +15,13 @@ app.get('/download/:sensor', async (req, res) => {
   try {
     const { sensor } = req.params;
 
-    const sensorSnapshot = await firebase.firestore()
+    const sensorSnapshot = await admin.firestore()
       .collection('sensors')
       .doc(sensor)
       .get();
 
     const earliestReading = sensorSnapshot.exists
-      ? earliestReading.get('earliestReading') || new Date()
+      ? sensorSnapshot.get('earliestReading') || new Date()
       : new Date();
 
     const readings = await sensorSnapshot.ref

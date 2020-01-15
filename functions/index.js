@@ -15,12 +15,22 @@ app.get('/download/:sensor', async (req, res) => {
   try {
     const { sensor } = req.params;
 
-    const sensorSnapshot = await admin.firestore()
-      .collection(`sensors/${sensor}/readings`)
+    const sensorSnapshot = await firebase.firestore()
+      .collection('sensors')
+      .doc(sensor)
+      .get();
+
+    const earliestReading = sensorSnapshot.exists
+      ? earliestReading.get('earliestReading') || new Date()
+      : new Date();
+
+    const readings = await sensorSnapshot.ref
+      .collection('readings')
+      .where('time', '>', earliestReading)
       .orderBy('time', 'desc')
       .get();
 
-    const json = sensorSnapshot.docs.map(doc => {
+    const json = readings.docs.map(doc => {
       const data = doc.data();
       data.time = data.time.toDate();
       return data;

@@ -7,7 +7,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.17/vue.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gauge.js/1.3.6/gauge.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.js"></script>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.min.css"
@@ -16,7 +15,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
     />
-    <title>mandana.ml</title>
+    <title>hih-sensor</title>
     <style>
       .is-vertical {
         display: flex;
@@ -74,8 +73,7 @@
           <div class="columns">
             <div class="column has-text-centered">
               <div class="box is-vertical">
-                <h4 class="title is-4">Inlet</h4>
-                Last updated: {{ lastUpdated('inlet') }}
+                <h1 class="title is-4" style="margin-bottom: 0;">Inlet</h1>
                 <label class="label has-margin-top">
                   {{ sensors.inlet.length ? sensors.inlet[0].get('humidity') + '%' : '-%' }}
                 </label>
@@ -83,34 +81,16 @@
                 <label class="label">
                   {{ sensors.inlet.length ? sensors.inlet[0].get('temperature') + 'º' : '-º' }}
                 </label>
-                <canvas id="inlet-temperature"/>
-                <div class="columns has-margin-top">
-                  <div class="column">
-                    <a class="button is-fullwidth is-info" :href="functionsBaseUrl + '/download/inlet'">
-                      <span class="icon">
-                        <i class="fa fa-download"/>
-                      </span>
-                      <span>Download inlet XLSX</span>
-                    </a>
-                  </div>
-                  <div class="column">
-                    <button
-                      :class="{'is-loading': isClearing.inlet}"
-                      class="button is-fullwidth is-danger"
-                      @click="onClearSensor('inlet')">
-                      <span class="icon">
-                        <i class="fa fa-trash"/>
-                      </span>
-                      <span>Reset inlet</span>
-                    </button>
-                  </div>
-                </div>
+                <canvas id="inlet-temperature" style="margin-bottom: 1rem;"/>
+                <h1 class="title is-6">Most recent readings:</h1>
+                <ul>
+                  <li v-for="time in readingTimes('inlet')">{{ time }}</li>
+                </ul>
               </div>
             </div>
             <div class="column has-text-centered">
               <div class="box is-vertical">
-                <h4 class="title is-4">Outlet</h4>
-                Last updated: {{ lastUpdated('outlet') }}
+                <h1 class="title is-4" style="margin-bottom: 0;">Outlet</h1>
                 <label class="label has-margin-top">
                   {{ sensors.outlet.length ? sensors.outlet[0].get('humidity') + '%' : '-%' }}
                 </label>
@@ -118,28 +98,66 @@
                 <label class="label">
                   {{ sensors.outlet.length ? sensors.outlet[0].get('temperature') + 'º' : '-º' }}
                 </label>
-                <canvas id="outlet-temperature"/>
-                <div class="columns has-margin-top">
-                  <div class="column">
-                    <a class="button is-fullwidth is-info" :href="functionsBaseUrl + '/download/outlet'">
-                      <span class="icon">
-                        <i class="fa fa-download"/>
+                <canvas id="outlet-temperature" style="margin-bottom: 1rem;"/>
+                <h1 class="title is-6">Most recent readings:</h1>
+                <ul>
+                  <li v-for="time in readingTimes('outlet')">{{ time }}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="columns">
+            <div class="column">
+              <div class="box">
+                <h1 class="title is-4">Experiments</h1>
+
+                <div style="margin-bottom: 10px;">
+                  <a v-show="!isExperimentRunning" class="button is-success" @click="startExperiment">
+                    <span class="icon" style="margin-right: 5px;">
+                      <i class="fa fa-play"/>
                       </span>
-                      <span>Download outlet XLSX</span>
-                    </a>
-                  </div>
-                  <div class="column">
-                    <button
-                      :class="{'is-loading': isClearing.outlet}"
-                      class="button is-fullwidth is-danger"
-                      @click="onClearSensor('outlet')">
-                      <span class="icon">
-                        <i class="fa fa-trash"/>
+                    Start new experiment
+                  </a>
+
+                  <a v-show="isExperimentRunning" class="button is-danger" @click="stopExperiment">
+                    <span class="icon" style="margin-right: 5px;">
+                      <i class="fa fa-stop"/>
                       </span>
-                      <span>Reset outlet</span>
-                    </button>
-                  </div>
+                    Stop current experiment
+                  </a>
                 </div>
+                        
+                <table class="table is-fullwidth">
+                  <thead>
+                    <tr>
+                      <th>Start</th>
+                      <th>End</th>
+                      <th class="has-text-centered">Inlet</th>
+                      <th class="has-text-centered">Outlet</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="experiment in experiments">
+                      <td>{{ experiment.get('start').toDate().toLocaleString() }}</td>
+                      <td>{{ experiment.get('end') ? experiment.get('end').toDate().toLocaleString() : '' }}</td>
+                      <td class="has-text-centered">
+                        <a style="width: 60px;" class="button is-small is-info" :href="getDownloadUrl(experiment, 'inlet')">
+                          <span class="icon">
+                            <i class="fa fa-download"/>
+                          </span>
+                        </a>
+                      </td>
+                      <td class="has-text-centered">
+                        <a style="width: 60px;" class="button is-small is-info" :href="getDownloadUrl(experiment, 'outlet')">
+                          <span class="icon">
+                            <i class="fa fa-download"/>
+                          </span>
+                        </a>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -147,15 +165,19 @@
       `,
 
         computed: {
-          lastUpdated() {
+          readingTimes() {
             return (sensor) => {
-              if (this.sensors[sensor].length) {
-                return moment(
-                  this.sensors[sensor][0].get("time").toDate()
-                ).format("ddd MMM D h:mm:ss a");
-              }
-              return "never";
+              return this.sensors[sensor].map((snapshot) =>
+                snapshot.get("time").toDate().toLocaleString()
+              );
             };
+          },
+
+          isExperimentRunning() {
+            return (
+              this.currentExperiment !== null &&
+              this.currentExperiment.get("id") !== null
+            );
           },
         },
 
@@ -163,6 +185,8 @@
           return {
             functionsBaseUrl:
               "https://us-central1-hih-sensor.cloudfunctions.net/api",
+            currentExperiment: null,
+            experiments: [],
             sensors: {
               inlet: [],
               outlet: [],
@@ -181,6 +205,7 @@
               inlet: false,
               outlet: false,
             },
+            error: "",
           };
         },
 
@@ -217,12 +242,28 @@
             ? outlet.get("earliestReading") || new Date()
             : new Date();
 
+          this.unsubscribeCurrentExperiment = firebase
+            .firestore()
+            .collection("meta")
+            .doc("currentExperiment")
+            .onSnapshot((snapshot) => {
+              this.currentExperiment = snapshot;
+            });
+
+          this.unsubscribeExperiments = firebase
+            .firestore()
+            .collection("experiments")
+            .orderBy("start", "desc")
+            .onSnapshot((snapshot) => {
+              this.experiments = snapshot.docs;
+            });
+
           this.unsubscribeFromInlet = firebase
             .firestore()
             .collection("sensors/inlet/readings")
             .orderBy("time", "desc")
             .where("time", ">", inletEarliestReading)
-            .limit(100)
+            .limit(5)
             .onSnapshot((snapshot) => {
               this.sensors.inlet = snapshot.docs;
             });
@@ -232,7 +273,7 @@
             .collection("sensors/outlet/readings")
             .orderBy("time", "desc")
             .where("time", ">", outletEarliestReading)
-            .limit(100)
+            .limit(5)
             .onSnapshot((snapshot) => {
               this.sensors.outlet = snapshot.docs;
             });
@@ -266,22 +307,40 @@
         },
 
         destroyed() {
+          if (this.unsubscribeExperiments) this.unsubscribeExperiments();
           if (this.unsubscribeFromInlet) this.unsubscribeFromInlet();
           if (this.unsubscribeFromOutlet) this.unsubscribeFromOutlet();
         },
 
         methods: {
-          async onClearSensor(sensor) {
+          getDownloadUrl(experiment, sensor) {
+            let url = `${
+              this.functionsBaseUrl
+            }/download/${sensor}?start=${experiment
+              .get("start")
+              .toDate()
+              .toISOString()}`;
+
+            if (experiment.get("end")) {
+              url += `&end=${experiment.get("end").toDate().toISOString()}`;
+            }
+
+            return url;
+          },
+
+          async startExperiment() {
             try {
-              this.isClearing[sensor] = true;
-              await axios.get(`/clear/${sensor}`);
-              this.sensors[sensor] = [];
-              this.gauges[sensor].humidity.set(0);
-              this.gauges[sensor].temperature.set(0);
+              await axios.get(`${this.functionsBaseUrl}/start`);
             } catch (error) {
-              console.error(error);
-            } finally {
-              this.isClearing[sensor] = false;
+              this.error = error;
+            }
+          },
+
+          async stopExperiment() {
+            try {
+              await axios.get(`${this.functionsBaseUrl}/stop`);
+            } catch (error) {
+              this.error = error;
             }
           },
         },

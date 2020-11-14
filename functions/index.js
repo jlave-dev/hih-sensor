@@ -11,9 +11,69 @@ admin.initializeApp({
 const express = require("express");
 const app = express();
 
+app.get("/start", async (req, res) => {
+  try {
+    const currentExperimentSnapshot = await admin
+      .firestore()
+      .collection("meta")
+      .doc("currentExperiment")
+      .get();
+
+    // If there's a current experiment running, return an error
+    if (currentExperimentSnapshot.get("id") !== null) {
+      return res
+        .status(500)
+        .send("Please end the current experiment before starting a new one.");
+    }
+
+    const newExperiment = await admin
+      .firestore()
+      .collection("experiments")
+      .add({ start: admin.firestore.FieldValue.serverTimestamp() });
+
+    await currentExperimentSnapshot.ref.update({ id: newExperiment.id });
+
+    res.sendStatus(200);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send(error);
+  }
+});
+
+app.get("/stop", async (req, res) => {
+  try {
+    const currentExperimentSnapshot = await admin
+      .firestore()
+      .collection("meta")
+      .doc("currentExperiment")
+      .get();
+
+    const currentExperimentId = currentExperimentSnapshot.get("id");
+
+    // If there's not current experiment running, return an error
+    if (currentExperimentId === null) {
+      return res.status(500).send("There is no experiment currently running.");
+    }
+
+    const runningExperimentSnapshot = await admin
+      .firestore()
+      .collection("experiments")
+      .doc(currentExperimentId)
+      .update({ end: admin.firestore.FieldValue.serverTimestamp() });
+
+    await currentExperimentSnapshot.ref.update({ id: null });
+
+    res.sendStatus(200);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send(error);
+  }
+});
+
 app.get("/download/:sensor", async (req, res) => {
   try {
     const { sensor } = req.params;
+    const { start, end } = req.query;
 
     const sensorSnapshot = await admin
       .firestore()
@@ -21,13 +81,10 @@ app.get("/download/:sensor", async (req, res) => {
       .doc(sensor)
       .get();
 
-    const earliestReading = sensorSnapshot.exists
-      ? sensorSnapshot.get("earliestReading") || new Date()
-      : new Date();
-
     const readings = await sensorSnapshot.ref
       .collection("readings")
-      .where("time", ">", earliestReading)
+      .where("time", ">", new Date(start))
+      .where("time", "<=", end ? new Date(end) : new Date())
       .orderBy("time", "asc")
       .get();
 
@@ -38,8 +95,6 @@ app.get("/download/:sensor", async (req, res) => {
         .toLocaleString("en-US", { timeZone: "America/Chicago" });
       return data;
     });
-
-    console.log(json.slice(10));
 
     const wb = xlsx.utils.book_new();
     const ws = xlsx.utils.json_to_sheet(json);
